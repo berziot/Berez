@@ -20,6 +20,29 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
 
+## Project structure:
+```agsl
+my-app/
+├── src/
+│   ├── app/                    # Server components and routes
+│   │   ├── [routeName]/        # Dynamic route segments
+│   │   │   └── page.tsx
+│   │   ├── page.tsx            # The home page
+│   │   └── layout.tsx          # Shared layout component
+│   ├── components/             # Reusable components
+│   │   ├── common/             # Common components like buttons, modals, etc.
+│   │   └── features/           # Feature-specific components
+│   ├── public/                 # Static files like images, favicon, etc.
+│   ├── styles/                 # CSS or styling-related files
+│   ├── hooks/                  # Custom React hooks
+│   ├── utils/                  # Utility functions
+│   ├── types/                  # TypeScript type definitions
+│   └── lib/                    # Library code, possibly for external APIs
+├── package.json
+├── tsconfig.json
+├── next.config.js
+└── ... (other configuration files)
+```
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

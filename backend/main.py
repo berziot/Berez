@@ -6,9 +6,13 @@ from sqlalchemy import create_engine, Column, Integer, Float, String, Text, Fore
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from typing import List
-
+from dotenv import load_dotenv
+import os
 # Database Configuration
-DATABASE_URL = "mysql+mysqlconnector://root:12345678@localhost/berez_db"
+load_dotenv()
+DB_USERNAME=os.getenv("DB_USERNAME")
+DB_PASSWORD=os.getenv("DB_PASSWORD")
+DATABASE_URL = f"mysql+mysqlconnector://{DB_USERNAME}:{DB_PASSWORD}@localhost/berez_db"
 
 # SQLAlchemy setup
 engine = create_engine(DATABASE_URL)

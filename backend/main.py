@@ -2,17 +2,25 @@
 
 from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
-from sqlalchemy import create_engine, Column, Integer, Float, String, Text, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, Text, ForeignKey, Boolean, Double,Enum,PickleType
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from typing import List
 from dotenv import load_dotenv
 import os
+import enum
 # Database Configuration
 load_dotenv()
 DB_USERNAME=os.getenv("DB_USERNAME")
 DB_PASSWORD=os.getenv("DB_PASSWORD")
 DATABASE_URL = f"mysql+mysqlconnector://{DB_USERNAME}:{DB_PASSWORD}@localhost/berez_db"
+
+class FountainType(enum.Enum):
+    cylindrical_fountain=1
+    leaf_fountaian=2
+    cooler=3
+    square_fountain=4
+    mushroom_fountain=5
 
 # SQLAlchemy setup
 engine = create_engine(DATABASE_URL)
@@ -24,14 +32,24 @@ class FountainModel(Base):
     __tablename__ = 'fountains'
     id = Column(Integer, primary_key=True, index=True)
     location = Column(String(255), index=True)
-    details = Column(Text)
+    dog_friendly = Column(Boolean)
+    type = Column(Enum(FountainType))
+    average_general_rating= Column(Double())
+    number_of_ratings=Column(Integer)
 
 class ReviewModel(Base):
     __tablename__ = 'reviews'
     id = Column(Integer, primary_key=True, index=True)
     fountain_id = Column(Integer, ForeignKey('fountains.id'))
-    rating = Column(Float)
-    comment = Column(Text)
+    general_rating = Column(Integer)
+    reviewer_nickname = Column(String(60))
+    reviewer_ID =Column(Integer)
+    general_rating=Column(Integer)
+    temp_rating=Column(Integer)
+    stream_rating=Column(Integer)
+    quenching_rating=Column(Integer)
+    description = Column(Text)
+    photos = Column(PickleType())
 
 # Create tables
 Base.metadata.create_all(bind=engine)

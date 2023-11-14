@@ -58,13 +58,20 @@ Base.metadata.create_all(bind=engine)
 class Fountain(BaseModel):
     id: int
     location: str
-    details: str
+    dog_friendly: bool
+    type:FountainType
+    average_general_rating: float
+    number_of_ratings: str
 
 class Review(BaseModel):
     id: int
     fountain_id: int
-    rating: float
-    comment: str
+    general_rating:int
+    temp_rating:int
+    stream_rating:int
+    quenching_rating:int
+    description :str
+    photos : List[int]
 
 # FastAPI app
 app = FastAPI()

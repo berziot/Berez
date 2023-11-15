@@ -1,50 +1,21 @@
 # main.py
 
 from fastapi import FastAPI, HTTPException, Depends
-from pydantic import BaseModel
-from sqlalchemy import create_engine, Integer, String, Text, ForeignKey, Boolean,Enum,PickleType
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlmodel import Field,SQLModel,Column,JSON
-from typing import List
+from models import Review,Fountain
 from dotenv import load_dotenv
+from sqlmodel import SQLModel
 import os
-import enum
 # Database Configuration
 load_dotenv()
 DB_USERNAME=os.getenv("DB_USERNAME")
 DB_PASSWORD=os.getenv("DB_PASSWORD")
 DATABASE_URL = f"mysql+mysqlconnector://{DB_USERNAME}:{DB_PASSWORD}@localhost/berez_db"
 
-class FountainType(enum.Enum):
-    cylindrical_fountain=1
-    leaf_fountaian=2
-    cooler=3
-    square_fountain=4
-    mushroom_fountain=5
-
 # SQLAlchemy setup
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# SQLmodel Models - works as pydanic and SQLalchemy models 
-class Fountain(SQLModel, table=True):
-    id: int=Field(primary_key=True,index=True)
-    location: str=Field(index=True)
-    dog_friendly: bool
-    type:FountainType
-    average_general_rating: float
-    number_of_ratings: int
-
-class Review(SQLModel, table=True):
-    id: int =Field(primary_key=True,index=True)
-    fountain_id: int=Field(index=True,foreign_key='fountain.id')
-    general_rating:int
-    temp_rating:int
-    stream_rating:int
-    quenching_rating:int
-    description :str
-    photos : List[int] = Field(sa_column=Column(JSON))
 
 # Create tables
 SQLModel.metadata.create_all(engine)
@@ -60,11 +31,11 @@ def get_db():
     finally:
         db.close()
 
-@app.get("/fountains", response_model=List[Fountain])
+@app.get("/fountains", response_model=list[Fountain])
 async def read_fountains(db = Depends(get_db)):
     return db.query(Fountain).all()
 
-@app.get("/reviews/{fountain_id}", response_model=List[Review])
+@app.get("/reviews/{fountain_id}", response_model=list[Review])
 async def read_reviews(fountain_id: int, db = Depends(get_db)):
     reviews = db.query(Review).filter(Review.fountain_id == fountain_id).all()
     if reviews:

@@ -6,7 +6,9 @@ from sqlalchemy.orm import sessionmaker
 from models import Review,Fountain
 from dotenv import load_dotenv
 from sqlmodel import SQLModel
+from models import FountainType
 import os
+from datetime import datetime
 # Database Configuration
 load_dotenv()
 DB_USERNAME=os.getenv("DB_USERNAME")
@@ -42,6 +44,46 @@ async def read_reviews(fountain_id: int, db = Depends(get_db)):
         return reviews
     else:
         raise HTTPException(status_code=404, detail="Fountain not found")
+  
+@app.get("/populate")
+async def populate_db(db = Depends(get_db)):
+    import pandas as pd
+    def extract_values(row):
+        d = eval(row)  # Convert string dictionary to a dictionary
+        return pd.Series([d['x'], d['y']])
+    
+    df = pd.read_csv('fountains.csv')
+    df[['longitude','latitude']]= df['coordinates'].apply(lambda x: extract_values(x))
+    df.drop('coordinates',axis=1,inplace=True)
+    
+    type_converter = {
+        'ברזית גליל': FountainType.cylindrical_fountain,
+        'ברזיית עלה': FountainType.leaf_fountain,
+        'קולר': FountainType.cooler,
+        'ברזיה מרובעת': FountainType.square_fountain,
+        'ברזית פטריה': FountainType.mushroom_fountain}
+    
+    for i,row in df.iterrows():
+        print(i)
+        address = row['open_map_address']
+        latitude = row['latitude']
+        longitude = row['longitude']
+        dog_friendly = row['dog_friendly'] 
+        average_general_rating= 0
+        number_of_ratings= 0
+        last_updated= datetime.now()
+        db.add(Fountain(
+            id=row['oid'],
+            type=type_converter[row['fountain_type']],
+            address=address,
+            latitude=latitude,
+            longitude=longitude,
+            dog_friendly=dog_friendly,
+            average_general_rating=average_general_rating,
+            number_of_ratings=number_of_ratings,
+            last_updated=last_updated))
+    db.commit()
+    print('added to db')  
     
 @app.post("/fountain")
 async def create_fountain(fountain: Fountain,db = Depends(get_db)):

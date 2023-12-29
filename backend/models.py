@@ -4,7 +4,7 @@ from datetime import datetime
 
 class FountainType(enum.Enum):
     cylindrical_fountain=1
-    leaf_fountaian=2
+    leaf_fountain=2
     cooler=3
     square_fountain=4
     mushroom_fountain=5

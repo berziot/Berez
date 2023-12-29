@@ -1,14 +1,15 @@
 # main.py
 
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Query
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Session
 from models import Review,Fountain
 from dotenv import load_dotenv
 from sqlmodel import SQLModel
 from models import FountainType
 import os
 from datetime import datetime
+from typing import Optional
 # Database Configuration
 load_dotenv()
 DB_USERNAME=os.getenv("DB_USERNAME")
@@ -46,7 +47,11 @@ async def read_reviews(fountain_id: int, db = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Fountain not found")
   
 @app.get("/populate")
-async def populate_db(db = Depends(get_db)):
+async def populate_db(
+    page: Optional[int] = Query(1, description="Page number"),
+    page_size: Optional[int] = Query(10, description="Items per page"),
+    db: Session = Depends(get_db)
+    ):
     import pandas as pd
     def extract_values(row):
         d = eval(row)  # Convert string dictionary to a dictionary
@@ -63,7 +68,10 @@ async def populate_db(db = Depends(get_db)):
         'ברזיה מרובעת': FountainType.square_fountain,
         'ברזית פטריה': FountainType.mushroom_fountain}
     
-    for i,row in df.iterrows():
+    start_idx = (page - 1) * page_size
+    end_idx = start_idx + page_size
+    
+    for i, row in df.iloc[start_idx:end_idx].iterrows():
         print(i)
         address = row['open_map_address']
         latitude = row['latitude']
@@ -83,7 +91,7 @@ async def populate_db(db = Depends(get_db)):
             number_of_ratings=number_of_ratings,
             last_updated=last_updated))
     db.commit()
-    print('added to db')  
+    return {'message': 'Data added to DB', 'page': page, 'page_size': page_size}  
     
 @app.post("/fountain")
 async def create_fountain(fountain: Fountain,db = Depends(get_db)):

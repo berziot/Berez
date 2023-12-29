@@ -1,31 +1,20 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-
+import { useRouter } from 'next/navigation'; // Import from next/navigation
+import { handleLocationPermission } from './common'
 const HomePage = () => {
-    const [location, setLocation] = useState<string | null>(null);
+    const router = useRouter();
 
+    const [location, setLocation] = useState<string | null>(null);
     useEffect(() => {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const { latitude, longitude } = position.coords;
-                    setLocation(`Latitude: ${latitude}, Longitude: ${longitude}`);
-                },
-                () => {
-                    setLocation('Location access denied.');
-                }
-            );
-        } else {
-            setLocation('Geolocation is not supported by this browser.');
-        }
-    }, []);
+        handleLocationPermission(setLocation, router)
+    }, [router]);
 
     return (
         <div>
             <h1>Welcome to the App</h1>
-            <p>Please grant location access.</p>
-            {location && <p>Your location: {location}</p>}
+            {location && (<p>Your location is: {location}</p>)}
         </div>
     );
 };

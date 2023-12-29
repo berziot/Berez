@@ -1,0 +1,38 @@
+.container {
+    padding: 0 2rem;
+}
+
+.main {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.title {
+    margin: 0;
+    line-height: 1.15;
+    font-size: 4rem;
+    text-align: center;
+}
+
+.description {
+    text-align: center;
+    line-height: 1.5;
+    font-size: 1.5rem;
+}
+
+.buttonContainer {
+    margin-top: 3rem;
+}
+
+.button {
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    color: white;
+    background-color: blue;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}

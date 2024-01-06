@@ -8,16 +8,16 @@ b. Configure MySQL
 1. Start MySQL Server: Ensure the MySQL server is running on your machine.
 2. Create Database:
 Open the MySQL shell and login.
+To run the shell in windows, find `msql`s location and run 
+```bash
+mysql -u root -p 
+```
+
 Create a new database for the project:
 ```sql
 CREATE DATABASE berez_db;
 ```
-c. Install MySQL Connector
-Install the MySQL connector for Python:
 
-```bash
-pip install mysql-connector-python
-```
 ## 2. Backend Setup (FastAPI)
 Navigate to the backend directory and install dependencies.
 
@@ -33,18 +33,14 @@ b. Install Required Packages
 Install FastAPI, Uvicorn, SQLAlchemy, and FastAPI-SQLAlchemy:
 
 ```bash
-pip install fastapi uvicorn sqlalchemy fastapi-sqlalchemy
+pip install -r requirements
 ```
-c. Configure Database Connection
-In your FastAPI code, update the DATABASE_URL in main.py with your MySQL credentials and database name:
 
-```python
-DATABASE_URL = "mysql+mysqlconnector://username:password@localhost/berez_db"
-```
 d. Run the FastAPI Application
 Start the FastAPI server:
 
 ```bash
+cd backend
 uvicorn main:app --reload
 ```
 The API will be available at http://localhost:8000.

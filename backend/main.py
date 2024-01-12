@@ -1,6 +1,8 @@
 # main.py
 
 from fastapi import FastAPI, HTTPException, Depends, Query
+from fastapi.middleware.cors import CORSMiddleware
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from models import Review,Fountain
@@ -10,10 +12,12 @@ from models import FountainType
 import os
 from datetime import datetime
 from typing import Optional
+
 # Database Configuration
 load_dotenv()
 DB_USERNAME=os.getenv("DB_USERNAME")
 DB_PASSWORD=os.getenv("DB_PASSWORD")
+APP_URL=os.getenv("APP_URL", "http://localhost:3000")
 DATABASE_URL = f"mysql+mysqlconnector://{DB_USERNAME}:{DB_PASSWORD}@localhost/berez_db"
 
 # SQLAlchemy setup
@@ -25,6 +29,14 @@ SQLModel.metadata.create_all(engine)
 
 # FastAPI app
 app = FastAPI()
+
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[APP_URL],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["Content-Type"],
+)
 
 # Dependency
 def get_db():

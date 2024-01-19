@@ -1,6 +1,8 @@
 # main.py
 
 from fastapi import FastAPI, HTTPException, Depends, Query
+from fastapi.middleware.cors import CORSMiddleware
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from models import Review,Fountain
@@ -13,10 +15,12 @@ from typing import Optional
 from fastapi_pagination import Page, add_pagination
 from fastapi_pagination.ext.sqlmodel import paginate
 
+
 # Database Configuration
 load_dotenv()
 DB_USERNAME=os.getenv("DB_USERNAME")
 DB_PASSWORD=os.getenv("DB_PASSWORD")
+APP_URL=os.getenv("APP_URL", "http://localhost:3000")
 DATABASE_URL = f"mysql+mysqlconnector://{DB_USERNAME}:{DB_PASSWORD}@localhost/berez_db"
 
 # SQLAlchemy setup
@@ -28,6 +32,14 @@ SQLModel.metadata.create_all(engine)
 
 # FastAPI app
 app = FastAPI()
+
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[APP_URL],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["Content-Type"],
+)
 
 add_pagination(app)
 
@@ -98,6 +110,11 @@ async def populate_db(db = Depends(get_db)):
 @app.post("/fountain")
 async def create_fountain(fountain: Fountain,db = Depends(get_db)):
     db.add(fountain)
+    db.commit() 
+
+@app.post("/review")
+async def create_review(review: Review,db = Depends(get_db)):
+    db.add(review)
     db.commit() 
 
 if __name__ == "__main__":

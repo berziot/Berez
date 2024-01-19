@@ -44,13 +44,14 @@ const calculateDistance = (fountain: Fountain, location: GeolocationPosition) =>
     }
 }
 const HomePage = () => {
-    const [location, setLocation] = useState<GeolocationPosition>(null);
+    const [location, setLocation] = useState<GeolocationPosition|null>(null);
     const [fountains, setFountains] = useState<Fountain[]>([]);
     const [fetchError, setFetchError] = useState<string | null>(null);
     const [locationError, setLocationError] = useState<string | null>(null);
 
     const fetchFountains = () => {
-        fetch(`${API_URL}/fountains`)
+        if(!location) return
+        fetch(`${API_URL}/fountains/${location.coords.longitude},${location.coords.latitude}`)
             .then(response => {
                 console.log("response", response)
                 return response.json()

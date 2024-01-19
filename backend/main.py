@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from models import Review,Fountain
 from dotenv import load_dotenv
-from sqlmodel import SQLModel,select
+from sqlmodel import SQLModel,select,select
 from models import FountainType
 import os
 from datetime import datetime
@@ -39,9 +39,14 @@ def get_db():
     finally:
         db.close()
 
-@app.get("/fountains", response_model=Page[Fountain])
-async def read_fountains(db = Depends(get_db)):
-    return paginate(db, select(Fountain))
+@app.get("/fountains/{longitude},{latitude}", response_model=Page[Fountain])
+async def read_fountains(longitude:float,latitude:float,db = Depends(get_db)):
+
+    #print(select(Fountain).order_by((Fountain.longitude - longitude)*(Fountain.longitude - longitude)+(Fountain.latitude - latitude)*(Fountain.latitude - latitude) ))#order_by( (
+
+    return paginate(db, select(Fountain).order_by( (Fountain.longitude - longitude)*(Fountain.longitude - longitude)+
+                                                  (Fountain.latitude - latitude)*(Fountain.latitude - latitude) ))
+
 
 @app.get("/reviews/{fountain_id}", response_model=list[Review])
 async def read_reviews(fountain_id: int, db = Depends(get_db)):

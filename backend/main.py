@@ -1,6 +1,6 @@
 # main.py
 
-from fastapi import FastAPI, HTTPException, Depends, Query
+from fastapi import FastAPI, HTTPException, Depends, Query,File,UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 from sqlalchemy import create_engine
@@ -108,6 +108,15 @@ async def populate_db(
 @app.post("/fountain")
 async def create_fountain(fountain: Fountain,db = Depends(get_db)):
     db.add(fountain)
+    db.commit() 
+
+@app.post("/review")
+async def create_fountain(review: Review,file: UploadFile = File(...),db = Depends(get_db)):
+    with open(file.filename, 'wb') as image:
+        content = await file.read()
+        image.write(content)
+        image.close()
+    db.add(review)
     db.commit() 
 
 if __name__ == "__main__":

@@ -1,2 +1,6 @@
 # Python gitignores
 __pycache__/
+
+
+#enviroment vars
+.env

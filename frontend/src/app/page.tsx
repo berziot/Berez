@@ -58,7 +58,7 @@ const HomePage = () => {
             })
             .then(data => {
                 console.log("data", data)
-                setFountains(data)
+                setFountains([ ...data.items])
             })
             .catch(error => {
                 console.log("error", error)
@@ -72,6 +72,9 @@ const HomePage = () => {
         }
     }, [location]);
 
+    useEffect(() => {
+        console.log("fountains", fountains)
+    }, [fountains])
     // Get user location, update every 10 seconds
     const getLocation = () => {
         if (navigator.geolocation) {
@@ -103,7 +106,8 @@ const HomePage = () => {
             <h1 className='title'>BEREZ</h1>
             {location ?
                 <>
-                    {fountains ? fountains.map((fountain) => (
+                    {fountains ? 
+                        fountains.map((fountain) => (
                         <div key={fountain.id} className='card'>
                             <p>#{fountain.id}</p>
                             <p>

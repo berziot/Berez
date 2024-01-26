@@ -44,20 +44,21 @@ const calculateDistance = (fountain: Fountain, location: GeolocationPosition) =>
     }
 }
 const HomePage = () => {
-    const [location, setLocation] = useState<GeolocationPosition>(null);
+    const [location, setLocation] = useState<GeolocationPosition|null>(null);
     const [fountains, setFountains] = useState<Fountain[]>([]);
     const [fetchError, setFetchError] = useState<string | null>(null);
     const [locationError, setLocationError] = useState<string | null>(null);
 
     const fetchFountains = () => {
-        fetch(`${API_URL}/fountains`)
+        if(!location) return
+        fetch(`${API_URL}/fountains/${location.coords.longitude},${location.coords.latitude}`)
             .then(response => {
                 console.log("response", response)
                 return response.json()
             })
             .then(data => {
                 console.log("data", data)
-                setFountains(data)
+                setFountains(data.items)
             })
             .catch(error => {
                 console.log("error", error)
@@ -102,7 +103,8 @@ const HomePage = () => {
             <h1 className='title'>BEREZ</h1>
             {location ?
                 <>
-                    {fountains ? fountains.map((fountain) => (
+                    {fountains ? 
+                        fountains.map((fountain) => (
                         <div key={fountain.id} className='card'>
                             <p>#{fountain.id}</p>
                             <p>

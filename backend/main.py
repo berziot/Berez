@@ -1,17 +1,19 @@
 # main.py
 
-from fastapi import FastAPI, HTTPException, Depends, Query
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import sessionmaker
 from models import Review,Fountain
 from dotenv import load_dotenv
-from sqlmodel import SQLModel
+from sqlmodel import SQLModel,select
 from models import FountainType
 import os
 from datetime import datetime
-from typing import Optional
+from fastapi_pagination import Page, add_pagination
+from fastapi_pagination.ext.sqlmodel import paginate
+
 
 # Database Configuration
 load_dotenv()
@@ -38,6 +40,8 @@ app.add_middleware(
     allow_headers=["Content-Type"],
 )
 
+add_pagination(app)
+
 # Dependency
 def get_db():
     db = SessionLocal()
@@ -46,9 +50,11 @@ def get_db():
     finally:
         db.close()
 
-@app.get("/fountains", response_model=list[Fountain])
-async def read_fountains(db = Depends(get_db)):
-    return db.query(Fountain).all()
+@app.get("/fountains/{longitude},{latitude}", response_model=Page[Fountain])
+async def read_fountains(longitude:float,latitude:float,db = Depends(get_db)):
+    return paginate(db, select(Fountain).order_by( (Fountain.longitude - longitude)*(Fountain.longitude - longitude)+
+                                                  (Fountain.latitude - latitude)*(Fountain.latitude - latitude) ))
+
 
 @app.get("/reviews/{fountain_id}", response_model=list[Review])
 async def read_reviews(fountain_id: int, db = Depends(get_db)):
@@ -56,14 +62,10 @@ async def read_reviews(fountain_id: int, db = Depends(get_db)):
     if reviews:
         return reviews
     else:
-        raise HTTPException(status_code=404, detail="Fountain not found")
+        raise HTTPException(status_code=404, detail="reviews not found")
   
 @app.get("/populate")
-async def populate_db(
-    page: Optional[int] = Query(1, description="Page number"),
-    page_size: Optional[int] = Query(10, description="Items per page"),
-    db: Session = Depends(get_db)
-    ):
+async def populate_db(db = Depends(get_db)):
     import pandas as pd
     def extract_values(row):
         d = eval(row)  # Convert string dictionary to a dictionary
@@ -80,10 +82,7 @@ async def populate_db(
         'ברזיה מרובעת': FountainType.square_fountain,
         'ברזית פטריה': FountainType.mushroom_fountain}
     
-    start_idx = (page - 1) * page_size
-    end_idx = start_idx + page_size
-    
-    for i, row in df.iloc[start_idx:end_idx].iterrows():
+    for i,row in df.iterrows():
         print(i)
         address = row['open_map_address']
         latitude = row['latitude']
@@ -102,8 +101,7 @@ async def populate_db(
             average_general_rating=average_general_rating,
             number_of_ratings=number_of_ratings,
             last_updated=last_updated))
-    db.commit()
-    return {'message': 'Data added to DB', 'page': page, 'page_size': page_size}  
+    db.commit() 
     
 @app.post("/fountain")
 async def create_fountain(fountain: Fountain,db = Depends(get_db)):

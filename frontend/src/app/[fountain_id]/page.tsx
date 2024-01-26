@@ -26,11 +26,22 @@ const FountainPage = () => {
             setCurrentFountain(fountains.filter(fountain => fountain.id === fountain_id)[0])
         }
     }, [])
+
     return (
-        <>
-            <h1>Fountain #{currentFountain?.id}</h1>
-            <p>Address: {currentFountain?.address}</p>
-        </>
+        <div className="card">
+            <h1>ברזייה #{currentFountain?.id}</h1>
+            <br/>
+            <p>כתובת: {currentFountain?.address}</p>
+            <p>
+                ידידותי לכלבים: {currentFountain?.dog_friendly ? 'כן' : 'לא'}
+            </p>
+            <p>
+                דירוג: {currentFountain?.average_general_rating} ({currentFountain?.number_of_ratings} דירוגים)
+            </p>
+            <p>
+                סוג ברזיה: {currentFountain?.type}
+            </p>
+        </div>
     )
 }
 

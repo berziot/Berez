@@ -86,7 +86,7 @@ const HomePage = () => {
                     }
                 },
                 {
-                    timeout: 7000,
+                    timeout: 5000,
                 }
             );
         } else {

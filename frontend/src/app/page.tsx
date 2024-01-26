@@ -4,6 +4,8 @@ import {useEffect, useState} from 'react';
 import {API_URL} from './consts';
 import './globals.css';
 import {Fountain} from "./types";
+import { useFountains } from "@/contexts/FountainContext";
+import {useRouter} from "next/navigation";
 
 const calculateDistance = (fountain: Fountain, location: Partial<GeolocationCoordinates>) => {
     if (!location) {
@@ -34,12 +36,14 @@ const calculateDistance = (fountain: Fountain, location: Partial<GeolocationCoor
     return distance.toFixed(0);
 }
 const HomePage = () => {
+    const router = useRouter();
+
     const [location, setLocation] = useState<Partial<GeolocationCoordinates>|null>(null);
-    const [fountains, setFountains] = useState<Fountain[]>([]);
     const [fetchError, setFetchError] = useState<string | null>(null);
     const [locationError, setLocationError] = useState<string | null>(null);
     const [locationWarning, setLocationWarning] = useState<string | null>(null);
 
+    const { fountains, setFountains } = useFountains()
     const fetchFountains = () => {
         fetch(`${API_URL}/fountains`)
             .then(response => {
@@ -126,8 +130,7 @@ const HomePage = () => {
             {location ?
                 <>
                     {fountains ? fountains.map((fountain) => (
-                        <div key={fountain.id} className='card'>
-                            <a href={"/"+fountain.id}>
+                        <div key={fountain.id} className='card' onClick={() => router.push(`/${fountain.id}`)}>
                             <p>#{fountain.id}</p>
                             <p>
                                 מרחק: {calculateDistance(fountain, location)} מטר
@@ -138,7 +141,6 @@ const HomePage = () => {
                             <p>
                                 דירוג: {fountain.average_general_rating} ({fountain.number_of_ratings} דירוגים)
                             </p>
-                            </a>
                         </div>
                     )) : fetchError ? <p>Failed to fetch fountains: {fetchError}</p> : <p>Loading...</p>
                     }

@@ -72,9 +72,6 @@ const HomePage = () => {
         }
     }, [location]);
 
-    useEffect(() => {
-        console.log("fountains", fountains)
-    }, [fountains])
     // Get user location, update every 10 seconds
     const getLocation = () => {
         if (navigator.geolocation) {

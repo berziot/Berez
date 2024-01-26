@@ -49,6 +49,36 @@ def get_db():
         yield db
     finally:
         db.close()
+        
+# Function to update an item in the database
+def update_fountain(db, new_fountain: Fountain):
+    from sqlalchemy import update
+    existing_fountain = db.query(Fountain).filter(Fountain.id == new_fountain.id).first()
+    if existing_fountain:
+        changed_values = {}
+
+        # Update the values with the new fountain
+        for key, old_value in vars(existing_fountain).items():
+            if key.startswith('_'):
+                continue
+            new_value = getattr(new_fountain, key)
+            if old_value != new_value:
+                changed_values[key] = new_value
+                setattr(existing_fountain, key, new_value)
+                
+        # Commit the changes to the database
+        stmt = (
+            update(Fountain)
+            .where(Fountain.id == existing_fountain.id)
+            .values(changed_values)
+        )    
+        db.execute(stmt)
+        db.commit()
+        # Retrieve the updated row using a SELECT statement
+        updated_fountain = db.query(Fountain).filter(Fountain.id == existing_fountain.id).first()
+
+        return updated_fountain
+    raise HTTPException(status_code=404, detail="fountain not found")
 
 @app.get("/fountains/{longitude},{latitude}", response_model=Page[Fountain])
 async def read_fountains(longitude:float,latitude:float,db = Depends(get_db)):
@@ -112,7 +142,21 @@ async def create_fountain(fountain: Fountain,db = Depends(get_db)):
 async def create_review(review: Review,db = Depends(get_db)):
     db.add(review)
     db.commit() 
+    
 
+@app.put("/fountain")
+def update_item(fountain: Fountain, db = Depends(get_db)):
+    updated_fountain = update_fountain(db, fountain)
+    return {"message": "fountain updated successfully", "updated_fountain": updated_fountain}
+
+@app.get("/fountains/{fountain_id}", response_model=Fountain)
+async def get_fountain(fountain_id: int, db = Depends(get_db)):
+    fountain = db.query(Fountain).filter(Fountain.id == fountain_id).first()
+    if fountain:
+        return fountain
+    else:
+        raise HTTPException(status_code=404, detail="Fountain not found")
+    
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

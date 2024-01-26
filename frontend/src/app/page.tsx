@@ -58,7 +58,7 @@ const HomePage = () => {
             })
             .then(data => {
                 console.log("data", data)
-                setFountains([ ...data.items])
+                setFountains(data.items)
             })
             .catch(error => {
                 console.log("error", error)

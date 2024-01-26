@@ -1,17 +1,16 @@
 # main.py
 
-from fastapi import FastAPI, HTTPException, Depends, Query
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import sessionmaker
 from models import Review,Fountain
 from dotenv import load_dotenv
-from sqlmodel import SQLModel,select,select
+from sqlmodel import SQLModel,select
 from models import FountainType
 import os
 from datetime import datetime
-from typing import Optional
 from fastapi_pagination import Page, add_pagination
 from fastapi_pagination.ext.sqlmodel import paginate
 
@@ -53,9 +52,6 @@ def get_db():
 
 @app.get("/fountains/{longitude},{latitude}", response_model=Page[Fountain])
 async def read_fountains(longitude:float,latitude:float,db = Depends(get_db)):
-
-    #print(select(Fountain).order_by((Fountain.longitude - longitude)*(Fountain.longitude - longitude)+(Fountain.latitude - latitude)*(Fountain.latitude - latitude) ))#order_by( (
-
     return paginate(db, select(Fountain).order_by( (Fountain.longitude - longitude)*(Fountain.longitude - longitude)+
                                                   (Fountain.latitude - latitude)*(Fountain.latitude - latitude) ))
 
@@ -119,4 +115,4 @@ async def create_review(review: Review,db = Depends(get_db)):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -50,6 +50,14 @@ def get_db():
 async def read_fountains(db = Depends(get_db)):
     return db.query(Fountain).all()
 
+@app.get("/fountains/{fountain_id}", response_model=Fountain)
+async def get_fountain(fountain_id: int, db = Depends(get_db)):
+    fountain = db.query(Fountain).filter(Fountain.id == fountain_id).first()
+    if fountain:
+        return fountain
+    else:
+        raise HTTPException(status_code=404, detail="Fountain not found")
+
 @app.get("/reviews/{fountain_id}", response_model=list[Review])
 async def read_reviews(fountain_id: int, db = Depends(get_db)):
     reviews = db.query(Review).filter(Review.fountain_id == fountain_id).all()

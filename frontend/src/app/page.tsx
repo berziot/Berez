@@ -75,8 +75,7 @@ const HomePage = () => {
             console.log("Getting location...");
             navigator.geolocation.getCurrentPosition(
                 (position) => {
-                    console.log("Location: ", position.coords);
-                    setLocation({...position.coords});
+                    setLocation(position.coords);
                 },
                 (err) => {
                     console.log("Error getting location: ", err);

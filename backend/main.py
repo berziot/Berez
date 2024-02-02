@@ -7,7 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from models import Review,Fountain
 from dotenv import load_dotenv
-from sqlmodel import SQLModel,select
+from sqlmodel import SQLModel,select,update
 from models import FountainType
 import os
 from datetime import datetime
@@ -50,35 +50,7 @@ def get_db():
     finally:
         db.close()
         
-# Function to update an item in the database
-def update_fountain(db, new_fountain: Fountain):
-    from sqlalchemy import update
-    existing_fountain = db.query(Fountain).filter(Fountain.id == new_fountain.id).first()
-    if existing_fountain:
-        changed_values = {}
 
-        # Update the values with the new fountain
-        for key, old_value in vars(existing_fountain).items():
-            if key.startswith('_'):
-                continue
-            new_value = getattr(new_fountain, key)
-            if old_value != new_value:
-                changed_values[key] = new_value
-                setattr(existing_fountain, key, new_value)
-                
-        # Commit the changes to the database
-        stmt = (
-            update(Fountain)
-            .where(Fountain.id == existing_fountain.id)
-            .values(changed_values)
-        )    
-        db.execute(stmt)
-        db.commit()
-        # Retrieve the updated row using a SELECT statement
-        updated_fountain = db.query(Fountain).filter(Fountain.id == existing_fountain.id).first()
-
-        return updated_fountain
-    raise HTTPException(status_code=404, detail="fountain not found")
 
 @app.get("/fountains/{longitude},{latitude}", response_model=Page[Fountain])
 async def read_fountains(longitude:float,latitude:float,db = Depends(get_db)):
@@ -143,10 +115,36 @@ async def create_review(review: Review,db = Depends(get_db)):
     db.add(review)
     db.commit() 
     
-
+# Function to update an item in the database
 @app.put("/fountain")
-def update_item(fountain: Fountain, db = Depends(get_db)):
-    updated_fountain = update_fountain(db, fountain)
+def update_founrain(new_fountain: Fountain, db = Depends(get_db)):
+    existing_fountain = db.query(Fountain).filter(Fountain.id == new_fountain.id).first()
+    if existing_fountain:
+        changed_values = {}
+
+        # Update the values with the new fountain
+        for key, old_value in vars(existing_fountain).items():
+            if key.startswith('_'):
+                continue
+            new_value = getattr(new_fountain, key)
+            if old_value != new_value:
+                changed_values[key] = new_value
+                setattr(existing_fountain, key, new_value)
+                
+        # Commit the changes to the database
+        stmt = (
+            update(Fountain)
+            .where(Fountain.id == existing_fountain.id)
+            .values(changed_values)
+        )    
+        db.execute(stmt)
+        db.commit()
+        # Retrieve the updated row using a SELECT statement
+        updated_fountain = db.query(Fountain).filter(Fountain.id == existing_fountain.id).first()
+
+    else:
+        raise HTTPException(status_code=404, detail="fountain not found")
+    
     return {"message": "fountain updated successfully", "updated_fountain": updated_fountain}
 
 @app.get("/fountains/{fountain_id}", response_model=Fountain)

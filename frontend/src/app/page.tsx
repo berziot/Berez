@@ -121,7 +121,7 @@ const HomePage = () => {
                             <p>
                                 דירוג: {fountain.average_general_rating} ({fountain.number_of_ratings} דירוגים)
                             </p>
-                            <button onClick={()=>openGoogleMaps(location.coords.longitude,location.coords.latitude)}>נווט</button>
+                            <button onClick={()=>openGoogleMaps(fountain.longitude,fountain.latitude)}>נווט</button>
                         </div>
                     )) : fetchError ? <p>Failed to fetch fountains: {fetchError}</p> : <p>Loading...</p>
                     }

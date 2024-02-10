@@ -123,6 +123,11 @@ const HomePage = () => {
         return () => clearInterval(interval);
     }, []);
 
+    const openGoogleMaps=(longitude:number,latitude:number)=> {
+        const url = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+        window.open(url, '_blank');
+      }
+
     return (
         <div>
             <h1 className='title'>BEREZ</h1>
@@ -142,6 +147,7 @@ const HomePage = () => {
                             <p>
                                 דירוג: {fountain.average_general_rating} ({fountain.number_of_ratings} דירוגים)
                             </p>
+                            <button onClick={()=>openGoogleMaps(fountain.longitude,fountain.latitude)}>נווט</button>
                         </div>
                     )) : fetchError ? <p>Failed to fetch fountains: {fetchError}</p> : <p>Loading...</p>
                     }

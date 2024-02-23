@@ -69,11 +69,8 @@ async def get_fountain(fountain_id: int, db = Depends(get_db)):
 @app.get("/reviews/{fountain_id}", response_model=list[Review])
 async def read_reviews(fountain_id: int, db = Depends(get_db)):
     reviews = db.query(Review).filter(Review.fountain_id == fountain_id).all()
-    if reviews:
-        return reviews
-    else:
-        raise HTTPException(status_code=404, detail="reviews not found")
-  
+    return reviews
+
 @app.get("/populate")
 async def populate_db(db = Depends(get_db)):
     import pandas as pd

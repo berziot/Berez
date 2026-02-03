@@ -2,37 +2,125 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Leaflet CSS import */
+@import 'leaflet/dist/leaflet.css';
+
+/* Base styles */
+:root {
+    --primary-color: #0066CC;
+    --primary-dark: #0052A3;
+    --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-area-top: env(safe-area-inset-top, 0px);
+}
+
+* {
+    -webkit-tap-highlight-color: transparent;
+}
+
+html {
+    font-size: 16px; /* Prevent iOS zoom on input focus */
+}
+
 body {
     direction: rtl;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior-y: none; /* Prevent pull-to-refresh in browser */
 }
+
+/* Safe area padding utilities */
+.pb-safe {
+    padding-bottom: max(1rem, var(--safe-area-bottom));
+}
+
+.pt-safe {
+    padding-top: max(0.5rem, var(--safe-area-top));
+}
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+/* Touch-friendly tap states */
+.tap-highlight {
+    @apply active:bg-gray-100 transition-colors duration-100;
+}
+
+/* Card component */
 .card {
-    @apply bg-white rounded-lg shadow-lg;
-    margin: 10px;
-    padding: 10px;
-    text-align: right;
+    @apply bg-white rounded-2xl shadow-sm border border-gray-100;
+    padding: 1rem;
 }
 
+.card-elevated {
+    @apply bg-white rounded-2xl shadow-lg;
+    padding: 1rem;
+}
+
+/* Title styles */
 .title {
-    @apply text-2xl font-bold;
-    text-align: center;
+    @apply text-2xl font-bold text-gray-900;
 }
 
-.left {
-    float: left;
+.title-sm {
+    @apply text-lg font-semibold text-gray-900;
 }
 
-.right {
-    float: right;
+/* Button styles - Mobile optimized with 48px min touch target */
+.btn {
+    @apply font-medium rounded-xl transition-all duration-150;
+    @apply active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+    min-height: 48px;
+    padding: 0.75rem 1.5rem;
 }
+
+.btn-primary {
+    @apply btn bg-blue-600 text-white;
+    @apply hover:bg-blue-700 active:bg-blue-800;
+}
+
+.btn-secondary {
+    @apply btn bg-gray-100 text-gray-700;
+    @apply hover:bg-gray-200 active:bg-gray-300;
+}
+
+.btn-outline {
+    @apply btn bg-transparent border-2 border-blue-600 text-blue-600;
+    @apply hover:bg-blue-50 active:bg-blue-100;
+}
+
+/* Legacy button support */
 .button {
-    @apply bg-gray-300 text-white font-bold py-2 px-4 rounded;
-    @apply hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50;
-    @apply transition ease-in-out duration-150;
-    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply btn-primary;
 }
 
+/* Input styles - 16px font prevents iOS zoom */
+input, textarea, select {
+    font-size: 16px !important;
+}
+
+.input {
+    @apply w-full px-4 py-3 rounded-xl border border-gray-300;
+    @apply focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none;
+    @apply transition-all duration-150;
+    min-height: 48px;
+}
+
+.textarea {
+    @apply input resize-none;
+    min-height: 100px;
+}
+
+/* Star rating styles */
 .star-rating {
-    @apply inline-flex;
+    @apply inline-flex gap-1;
+    direction: ltr; /* Stars should be LTR */
 }
 
 .star-rating input[type="radio"] {
@@ -40,12 +128,144 @@ body {
 }
 
 .star-rating label {
-    @apply cursor-pointer;
-    color: #d2d3d5; /* Default/Unselected Star Color */
+    @apply cursor-pointer text-gray-300 transition-colors duration-100;
+    font-size: 2rem;
+    padding: 0.5rem;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .star-rating label:hover,
-.star-rating label:hover ~ label,
+.star-rating label.active,
 .star-rating input[type="radio"]:checked ~ label {
-    color: #ffc107; /* Selected Star Color */
+    @apply text-yellow-400;
+}
+
+/* Floating elements */
+.fab {
+    @apply fixed bg-white rounded-full shadow-lg p-3;
+    @apply active:bg-gray-100 transition-colors;
+    min-width: 48px;
+    min-height: 48px;
+}
+
+/* Bottom navigation */
+.bottom-nav {
+    @apply fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200;
+    @apply flex items-center justify-around;
+    padding-bottom: max(0.5rem, var(--safe-area-bottom));
+    padding-top: 0.5rem;
+    z-index: 50;
+}
+
+.bottom-nav-item {
+    @apply flex flex-col items-center justify-center gap-1 py-2 px-4;
+    @apply text-gray-500 transition-colors;
+    min-width: 64px;
+    min-height: 48px;
+}
+
+.bottom-nav-item.active {
+    @apply text-blue-600;
+}
+
+.bottom-nav-item:active {
+    @apply text-blue-700;
+}
+
+/* Map styles */
+.leaflet-container {
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+}
+
+.custom-fountain-marker {
+    background: transparent;
+    border: none;
+}
+
+/* Bottom sheet */
+.bottom-sheet {
+    @apply fixed inset-x-0 bottom-0 bg-white rounded-t-3xl shadow-2xl;
+    @apply transform transition-transform duration-300 ease-out;
+    max-height: 60vh;
+    z-index: 40;
+}
+
+.bottom-sheet-backdrop {
+    @apply fixed inset-0 bg-black/20 transition-opacity duration-300;
+    z-index: 39;
+}
+
+/* Pull to refresh indicator */
+.pull-indicator {
+    @apply fixed top-0 left-0 right-0 flex justify-center py-4;
+    @apply transition-transform duration-200;
+}
+
+/* Loading skeleton */
+.skeleton {
+    @apply animate-pulse bg-gray-200 rounded;
+}
+
+/* Empty state */
+.empty-state {
+    @apply flex flex-col items-center justify-center py-12 px-4 text-center;
+}
+
+.empty-state-icon {
+    @apply text-6xl mb-4;
+}
+
+.empty-state-title {
+    @apply text-lg font-medium text-gray-700 mb-2;
+}
+
+.empty-state-text {
+    @apply text-gray-500;
+}
+
+/* Animation utilities */
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.2s ease-out;
+}
+
+/* Utilities */
+.text-shadow {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Legacy float utilities */
+.left {
+    float: left;
+}
+
+.right {
+    float: right;
 }

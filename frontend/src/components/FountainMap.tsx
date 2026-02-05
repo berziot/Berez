@@ -9,6 +9,7 @@ interface FountainMapProps {
     userLocation: { latitude: number; longitude: number } | null;
     onFountainSelect: (fountain: Fountain | null) => void;
     selectedFountain: Fountain | null;
+    isUserInTelAviv: boolean;
 }
 
 // Get marker color based on rating
@@ -23,7 +24,8 @@ export default function FountainMap({
     fountains, 
     userLocation, 
     onFountainSelect,
-    selectedFountain 
+    selectedFountain,
+    isUserInTelAviv
 }: FountainMapProps) {
     const router = useRouter();
     const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -35,7 +37,8 @@ export default function FountainMap({
 
     // Default center (Tel Aviv)
     const defaultCenter: [number, number] = [32.0853, 34.7818];
-    const center: [number, number] = userLocation 
+    // Center on user only if they're in Tel Aviv, otherwise center on Tel Aviv
+    const center: [number, number] = (userLocation && isUserInTelAviv)
         ? [userLocation.latitude, userLocation.longitude]
         : defaultCenter;
 
@@ -221,24 +224,26 @@ export default function FountainMap({
                 </button>
             </div>
 
-            {/* Recenter button */}
-            <button
-                onClick={handleRecenter}
-                className="absolute bottom-24 left-4 z-10 bg-white rounded-full p-3 shadow-lg active:bg-gray-100 transition-colors min-w-[48px] min-h-[48px] flex items-center justify-center"
-                aria-label="חזור למיקום שלי"
-            >
-                <svg 
-                    width="24" 
-                    height="24" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="#0066CC" 
-                    strokeWidth="2"
+            {/* Recenter button - only show when user is in Tel Aviv */}
+            {isUserInTelAviv && (
+                <button
+                    onClick={handleRecenter}
+                    className="absolute bottom-24 left-4 z-10 bg-white rounded-full p-3 shadow-lg active:bg-gray-100 transition-colors min-w-[48px] min-h-[48px] flex items-center justify-center"
+                    aria-label="חזור למיקום שלי"
                 >
-                    <circle cx="12" cy="12" r="3" />
-                    <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
-                </svg>
-            </button>
+                    <svg 
+                        width="24" 
+                        height="24" 
+                        viewBox="0 0 24 24" 
+                        fill="none" 
+                        stroke="#0066CC" 
+                        strokeWidth="2"
+                    >
+                        <circle cx="12" cy="12" r="3" />
+                        <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
+                    </svg>
+                </button>
+            )}
         </div>
     );
 }

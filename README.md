@@ -6,6 +6,7 @@ A mobile-first web application to discover, rate, and review public drinking fou
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green)
 ![AWS Lambda](https://img.shields.io/badge/AWS-Lambda-orange)
 ![Vercel](https://img.shields.io/badge/Vercel-Deployed-black)
+![Deploy Backend](https://github.com/yourusername/berez/actions/workflows/deploy-backend.yml/badge.svg)
 
 ## 🌟 Features
 
@@ -125,6 +126,19 @@ curl http://localhost:8000/populate
 ### Deploy Your Own Instance
 
 #### Backend (AWS Lambda)
+
+**Option 1: Automatic Deployment (Recommended)** ⚡
+
+The backend automatically deploys to AWS on every push to `main` branch via GitHub Actions.
+
+**Setup once:**
+1. Create AWS IAM user with deployment permissions
+2. Add `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` to GitHub Secrets
+3. Push changes to `main` branch → automatic deployment!
+
+**Detailed setup guide**: See [`.github/DEPLOYMENT_SETUP.md`](.github/DEPLOYMENT_SETUP.md)
+
+**Option 2: Manual Deployment**
 ```bash
 cd backend
 
@@ -140,7 +154,7 @@ export AWS_PROFILE=my-dev-profile
 ./deploy.sh prod
 ```
 
-This creates:
+**What gets deployed:**
 - Lambda function with FastAPI app
 - API Gateway HTTP API
 - S3 bucket for photos (public read)

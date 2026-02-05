@@ -10,7 +10,9 @@ from sqlalchemy.orm import sessionmaker, Session
 from models import (
     Review, Fountain, User, Photo,
     UserCreate, UserLogin, UserResponse, Token,
-    ReviewCreate, ReviewResponse, FountainType
+    ReviewCreate, ReviewResponse, FountainType,
+    FountainReport, FountainReportCreate, FountainReportResponse,
+    ReportType, ReportStatus, FountainCreate
 )
 from auth import (
     get_password_hash, authenticate_user, create_access_token,
@@ -234,6 +236,7 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
     
     user = User(
         username=user_data.username,
+        name=user_data.name,
         email=user_data.email,
         password_hash=get_password_hash(user_data.password)
     )
@@ -505,6 +508,129 @@ async def update_fountain(new_fountain: Fountain, db=Depends(get_db)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error updating fountain: {str(e)}"
         )
+
+
+@app.post("/fountains/submit", status_code=status.HTTP_201_CREATED)
+async def submit_fountain(
+    fountain_data: FountainCreate,
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user_optional)
+):
+    """Submit a new user-contributed fountain."""
+    try:
+        fountain = Fountain(
+            address=fountain_data.address,
+            latitude=fountain_data.latitude,
+            longitude=fountain_data.longitude,
+            dog_friendly=fountain_data.dog_friendly,
+            bottle_refill=fountain_data.bottle_refill,
+            type=fountain_data.type,
+            description=fountain_data.description,
+            status="user_submitted",
+            submitted_by=current_user.id if current_user else None,
+            average_general_rating=0.0,
+            number_of_ratings=0,
+            last_updated=datetime.now()
+        )
+        
+        db.add(fountain)
+        db.commit()
+        db.refresh(fountain)
+        
+        return {
+            "message": "תודה! הברזיה נשלחה לאישור",
+            "fountain": fountain
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error submitting fountain: {str(e)}"
+        )
+
+
+@app.post("/fountains/report", status_code=status.HTTP_201_CREATED)
+async def report_fountain(
+    report_data: FountainReportCreate,
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user_optional)
+):
+    """Report an issue with a fountain."""
+    try:
+        # Verify fountain exists
+        fountain = db.query(Fountain).filter(Fountain.id == report_data.fountain_id).first()
+        if not fountain:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Fountain with ID {report_data.fountain_id} not found"
+            )
+        
+        report = FountainReport(
+            fountain_id=report_data.fountain_id,
+            user_id=current_user.id if current_user else None,
+            report_type=report_data.report_type,
+            description=report_data.description,
+            status=ReportStatus.pending
+        )
+        
+        db.add(report)
+        db.commit()
+        db.refresh(report)
+        
+        return {
+            "message": "תודה על הדיווח!",
+            "report": {
+                "id": report.id,
+                "fountain_id": report.fountain_id,
+                "report_type": report.report_type.value,
+                "description": report.description,
+                "created_at": report.created_at
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error creating report: {str(e)}"
+        )
+
+
+@app.get("/fountains/{fountain_id}/reports", response_model=List[FountainReportResponse])
+async def get_fountain_reports(fountain_id: int, db: Session = Depends(get_db)):
+    """Get all reports for a fountain."""
+    fountain = db.query(Fountain).filter(Fountain.id == fountain_id).first()
+    if not fountain:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Fountain not found"
+        )
+    
+    reports = db.query(FountainReport).filter(
+        FountainReport.fountain_id == fountain_id
+    ).order_by(FountainReport.created_at.desc()).all()
+    
+    result = []
+    for report in reports:
+        report_dict = {
+            "id": report.id,
+            "fountain_id": report.fountain_id,
+            "user_id": report.user_id,
+            "username": None,
+            "report_type": report.report_type,
+            "description": report.description,
+            "status": report.status,
+            "created_at": report.created_at,
+            "resolved_at": report.resolved_at
+        }
+        if report.user_id:
+            user = db.query(User).filter(User.id == report.user_id).first()
+            if user:
+                report_dict["username"] = user.username
+        result.append(FountainReportResponse(**report_dict))
+    
+    return result
 
 
 # ==================== REVIEW ENDPOINTS ====================

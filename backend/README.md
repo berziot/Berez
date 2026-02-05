@@ -82,6 +82,29 @@ curl http://localhost:8000/populate
 
 ## ☁️ AWS Deployment
 
+### Automatic Deployment (CI/CD) ✨
+
+**The backend automatically deploys to AWS on every push to `main` branch!**
+
+This is configured via GitHub Actions (`.github/workflows/deploy-backend.yml`).
+
+**One-time setup required:**
+1. Create AWS IAM user for GitHub Actions
+2. Add `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` to GitHub Secrets
+3. Push code → automatic deployment to AWS Lambda ⚡
+
+**Detailed setup guide**: [`.github/DEPLOYMENT_SETUP.md`](../.github/DEPLOYMENT_SETUP.md)
+
+After setup, every push to `main` triggers:
+- ✅ Automatic build with SAM CLI
+- ✅ Deploy to AWS Lambda + API Gateway
+- ✅ Update CloudFormation stack
+- ✅ Deployment status in GitHub Actions tab
+
+**Deployment time**: 2-5 minutes per push
+
+---
+
 ### Architecture Benefits
 - **Serverless**: Pay per request, $0 when idle
 - **Free Tier**: 1M Lambda requests/month (always free)

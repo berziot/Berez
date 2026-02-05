@@ -151,10 +151,10 @@ const AddReviewCard: React.FC<AddReviewCardProps> = ({
                 <div className="flex items-center gap-2 mb-4 text-sm text-gray-600">
                     <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
                         <span className="text-xs font-medium text-blue-600">
-                            {user?.username?.charAt(0).toUpperCase()}
+                            {user?.name?.charAt(0).toUpperCase()}
                         </span>
                     </div>
-                    <span>מדרג כ-<strong>{user?.username}</strong></span>
+                    <span>מדרג כ-<strong>{user?.name}</strong></span>
                 </div>
             ) : (
                 <div className="bg-yellow-50 border border-yellow-100 rounded-xl p-3 mb-4 text-sm text-yellow-700">

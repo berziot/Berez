@@ -1,5 +1,6 @@
 # Core FastAPI
 fastapi>=0.100.0
+uvicorn>=0.20.0
 mangum>=0.17.0
 python-multipart>=0.0.5
 
@@ -10,6 +11,7 @@ SQLAlchemy>=2.0.0
 # Authentication
 python-jose[cryptography]>=3.3.0
 passlib[bcrypt]>=1.7.4
+bcrypt<5.0  # Pin to <5.0 for passlib compatibility
 
 # AWS
 boto3>=1.28.0

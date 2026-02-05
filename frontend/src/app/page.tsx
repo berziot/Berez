@@ -39,6 +39,24 @@ function calculateDistance(
     return R * c;
 }
 
+// Check if a location is within Tel Aviv
+// Tel Aviv center: 32.0853, 34.7818
+// Using a radius of 10km to cover the metropolitan area
+function isLocationInTelAviv(lat: number, lon: number): boolean {
+    const TEL_AVIV_CENTER_LAT = 32.0853;
+    const TEL_AVIV_CENTER_LON = 34.7818;
+    const TEL_AVIV_RADIUS = 10000; // 10km in meters
+    
+    const distance = calculateDistance(
+        lat,
+        lon,
+        TEL_AVIV_CENTER_LAT,
+        TEL_AVIV_CENTER_LON
+    );
+    
+    return distance <= TEL_AVIV_RADIUS;
+}
+
 type ViewMode = 'list' | 'map';
 
 export default function HomePage() {
@@ -54,8 +72,23 @@ export default function HomePage() {
     const [isLoading, setIsLoading] = useState(true);
     const [viewMode, setViewMode] = useState<ViewMode>('list');
     const [selectedFountain, setSelectedFountain] = useState<Fountain | null>(null);
+    const [showOutsideTelAvivModal, setShowOutsideTelAvivModal] = useState(false);
 
     const { fountains, setFountains } = useFountains();
+
+    // Check if user is in Tel Aviv
+    const isUserInTelAviv = useMemo(() => {
+        if (!location) return true; // Default to true if no location yet
+        return isLocationInTelAviv(location.latitude, location.longitude);
+    }, [location]);
+
+    // Show modal when user is outside Tel Aviv (only once per session)
+    useEffect(() => {
+        if (location && !isUserInTelAviv && !sessionStorage.getItem('outsideTelAvivModalShown')) {
+            setShowOutsideTelAvivModal(true);
+            sessionStorage.setItem('outsideTelAvivModalShown', 'true');
+        }
+    }, [location, isUserInTelAviv]);
 
     // Get view mode from URL or localStorage
     useEffect(() => {
@@ -292,6 +325,7 @@ export default function HomePage() {
                             userLocation={location}
                             selectedFountain={selectedFountain}
                             onFountainSelect={setSelectedFountain}
+                            isUserInTelAviv={isUserInTelAviv}
                         />
                         
                         {/* Bottom sheet for selected fountain */}
@@ -309,6 +343,44 @@ export default function HomePage() {
                 activeTab={viewMode === 'map' ? 'map' : 'home'}
                 onTabChange={handleViewChange}
             />
+
+            {/* Outside Tel Aviv Modal */}
+            {showOutsideTelAvivModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl">
+                        <div className="text-center">
+                            <div className="text-5xl mb-4">📍</div>
+                            <h2 className="text-xl font-bold mb-3 text-gray-900">
+                                אזור לא נתמך כרגע
+                            </h2>
+                            <p className="text-gray-600 mb-6 leading-relaxed">
+                                ברז כרגע פועלת בתל אביב בלבד.
+                                <br />
+                                מוזמנים בינתיים להביט בברזיות שם :)
+                            </p>
+                            <button
+                                onClick={() => setShowOutsideTelAvivModal(false)}
+                                className="w-full bg-blue-600 text-white py-3 px-6 rounded-xl font-medium hover:bg-blue-700 transition-colors"
+                            >
+                                הבנתי
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Floating Action Button - Add Fountain */}
+            <button
+                onClick={() => router.push('/add-fountain')}
+                className="fixed bottom-24 right-4 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all hover:scale-110 active:scale-95 flex items-center justify-center z-40"
+                aria-label="הוסף ברזיה"
+                title="הוסף ברזיה חדשה"
+            >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+            </button>
         </div>
     );
 }

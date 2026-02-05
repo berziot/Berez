@@ -10,6 +10,7 @@ import AddReviewCard from "@/components/AddReviewCard";
 import PhotoCarousel from "@/components/PhotoCarousel";
 import StarRating from "@/components/StarRating";
 import { FountainDetailSkeleton } from "@/components/LoadingSkeleton";
+import ReportFountainSheet from "@/components/ReportFountainSheet";
 
 // Calculate distance between two coordinates in meters
 function calculateDistance(
@@ -52,6 +53,7 @@ export default function FountainPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
     const [showReviewForm, setShowReviewForm] = useState(false);
+    const [showReportSheet, setShowReportSheet] = useState(false);
 
     // Parse fountain ID from URL
     const segments = pathname.split('/');
@@ -253,7 +255,7 @@ export default function FountainPage() {
                     </div>
 
                     {/* Rating */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 mb-3">
                         <StarRating rating={currentFountain.average_general_rating} size="md" />
                         <span className="text-gray-600">
                             {currentFountain.average_general_rating.toFixed(1)}
@@ -262,6 +264,19 @@ export default function FountainPage() {
                             ({currentFountain.number_of_ratings} דירוגים)
                         </span>
                     </div>
+
+                    {/* Report button */}
+                    <button
+                        onClick={() => setShowReportSheet(true)}
+                        className="w-full py-2 px-4 rounded-xl font-medium text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="12" y1="8" x2="12" y2="12" />
+                            <line x1="12" y1="16" x2="12.01" y2="16" />
+                        </svg>
+                        דווח על בעיה
+                    </button>
                 </div>
             </div>
 
@@ -329,6 +344,13 @@ export default function FountainPage() {
                     </button>
                 </div>
             </div>
+
+            {/* Report Sheet */}
+            <ReportFountainSheet
+                fountainId={fountain_id}
+                isOpen={showReportSheet}
+                onClose={() => setShowReportSheet(false)}
+            />
         </div>
     );
 }

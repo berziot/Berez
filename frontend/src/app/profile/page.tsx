@@ -57,12 +57,13 @@ export default function ProfilePage() {
                     <div className="flex items-center gap-4 mb-4">
                         <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
                             <span className="text-2xl font-bold text-blue-600">
-                                {user.username.charAt(0).toUpperCase()}
+                                {user.name.charAt(0).toUpperCase()}
                             </span>
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold text-gray-900">{user.username}</h2>
-                            <p className="text-gray-500">{user.email}</p>
+                            <h2 className="text-xl font-bold text-gray-900">{user.name}</h2>
+                            <p className="text-gray-500">@{user.username}</p>
+                            <p className="text-sm text-gray-400">{user.email}</p>
                         </div>
                     </div>
                     

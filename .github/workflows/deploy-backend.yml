@@ -1,0 +1,84 @@
+name: Deploy Backend to AWS
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy-backend.yml'
+
+  # Allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up AWS SAM CLI
+        uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-1
+
+      - name: Generate JWT Secret
+        id: jwt-secret
+        run: |
+          JWT_SECRET=$(openssl rand -hex 32)
+          echo "::add-mask::$JWT_SECRET"
+          echo "JWT_SECRET=$JWT_SECRET" >> $GITHUB_OUTPUT
+
+      - name: Build SAM application
+        run: |
+          cd backend
+          sam build
+
+      - name: Deploy to AWS
+        run: |
+          cd backend
+          sam deploy \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset \
+            --stack-name berez-api-prod \
+            --region eu-west-1 \
+            --capabilities CAPABILITY_IAM \
+            --parameter-overrides \
+              "Environment=prod" \
+              "JWTSecretKey=${{ steps.jwt-secret.outputs.JWT_SECRET }}" \
+              "FrontendURL=https://berez.vercel.app"
+
+      - name: Get API endpoint
+        id: api-url
+        run: |
+          API_URL=$(aws cloudformation describe-stacks \
+            --stack-name berez-api-prod \
+            --region eu-west-1 \
+            --query 'Stacks[0].Outputs[?OutputKey==`ApiEndpoint`].OutputValue' \
+            --output text)
+          echo "API_URL=$API_URL" >> $GITHUB_OUTPUT
+          echo "::notice::API Endpoint: $API_URL"
+
+      - name: Deployment summary
+        run: |
+          echo "### ✅ Backend Deployment Successful" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**API Endpoint:** ${{ steps.api-url.outputs.API_URL }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** Production (eu-west-1)" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY

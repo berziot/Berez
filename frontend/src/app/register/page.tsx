@@ -10,6 +10,7 @@ export default function RegisterPage() {
     const { register, isAuthenticated } = useAuth();
     
     const [username, setUsername] = useState('');
+    const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -38,6 +39,12 @@ export default function RegisterPage() {
             return;
         }
 
+        // Validate name
+        if (name.trim().length < 1) {
+            setError('שם מלא הוא שדה חובה');
+            return;
+        }
+
         // Validate password length
         if (password.length < 6) {
             setError('הסיסמה חייבת להכיל לפחות 6 תווים');
@@ -46,7 +53,7 @@ export default function RegisterPage() {
 
         setIsLoading(true);
 
-        const result = await register(username, email, password);
+        const result = await register(username, name, email, password);
         
         if (result.success) {
             router.push('/');
@@ -82,6 +89,24 @@ export default function RegisterPage() {
                                 {error}
                             </div>
                         )}
+
+                        <div>
+                            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                                שם מלא
+                            </label>
+                            <input
+                                type="text"
+                                id="name"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-base"
+                                placeholder="הכנס שם מלא"
+                                required
+                                disabled={isLoading}
+                                minLength={1}
+                                maxLength={100}
+                            />
+                        </div>
 
                         <div>
                             <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">

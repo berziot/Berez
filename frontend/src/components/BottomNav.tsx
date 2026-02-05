@@ -63,7 +63,7 @@ export default function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
         },
         {
             id: 'profile',
-            label: isAuthenticated ? user?.username || 'פרופיל' : 'התחברות',
+            label: isAuthenticated ? user?.name || 'פרופיל' : 'התחברות',
             href: isAuthenticated ? '/profile' : '/login',
             icon: (
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

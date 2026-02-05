@@ -1,39 +1,60 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# dependencies
+# Dependencies
 /node_modules
 /.pnp
 .pnp.js
 .yarn/install-state.gz
+.pnp.*
 
-# testing
+# Testing
 /coverage
+*.lcov
+.nyc_output
 
-# next.js
+# Next.js
 /.next/
 /out/
 
-# production
+# Production
 /build
 
-# misc
+# Misc
 .DS_Store
 *.pem
+Thumbs.db
 
-# debug
+# Debug and logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+*.log
 
-# local env files
+# Local environment (do not commit secrets)
+.env
+.env.*
 .env*.local
+!.env.example
 
-# vercel
+# Vercel / Netlify
 .vercel
+.netlify
 
-# typescript
+# TypeScript
 *.tsbuildinfo
 next-env.d.ts
 
-#enviroment vars
-.env
+# Linter and tool caches
+.eslintcache
+.stylelintcache
+
+# Turborepo
+.turbo
+
+# Parcel / other bundler caches
+.cache
+.parcel-cache
+
+# SWC (Next.js compiler cache)
+.swc

@@ -1,9 +1,0 @@
-feat: add user name field and fix registration error
-
-- Add 'name' field to User model for storing actual names
-- Fix bcrypt compatibility issue (pin to <5.0 for passlib)
-- Update registration form to collect full name
-- Display user's name in profile and reviews
-- Add uvicorn to requirements.txt
-
-BREAKING CHANGE: Database schema changed - production DB needs reset

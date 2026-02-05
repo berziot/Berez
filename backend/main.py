@@ -828,6 +828,24 @@ async def init_database():
         )
 
 
+@app.get("/reset-db")
+async def reset_database():
+    """Drop and recreate all database tables. WARNING: This deletes all data!"""
+    try:
+        # Drop all tables
+        SQLModel.metadata.drop_all(engine)
+        # Recreate all tables with current schema
+        SQLModel.metadata.create_all(engine)
+        # Save to S3 if on Lambda
+        save_lambda_db()
+        return {"message": "Database reset successfully - all tables recreated"}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error resetting database: {str(e)}"
+        )
+
+
 # ==================== HEALTH CHECK ====================
 
 @app.get("/health")

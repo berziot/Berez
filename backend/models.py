@@ -54,6 +54,13 @@ class UserResponse(SQLModel):
     is_active: bool
 
 
+class AuthResponse(SQLModel):
+    """Schema for auth response with user and token."""
+    user: UserResponse
+    access_token: str
+    token_type: str = "bearer"
+
+
 class Token(SQLModel):
     """JWT token response."""
     access_token: str

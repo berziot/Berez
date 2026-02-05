@@ -9,7 +9,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from models import (
     Review, Fountain, User, Photo,
-    UserCreate, UserLogin, UserResponse, Token,
+    UserCreate, UserLogin, UserResponse, Token, AuthResponse,
     ReviewCreate, ReviewResponse, FountainType,
     FountainReport, FountainReportCreate, FountainReportResponse,
     ReportType, ReportStatus, FountainCreate
@@ -219,9 +219,9 @@ async def get_current_user_required(
 
 # ==================== AUTH ENDPOINTS ====================
 
-@app.post("/auth/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@app.post("/auth/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
 async def register(user_data: UserCreate, db: Session = Depends(get_db)):
-    """Register a new user."""
+    """Register a new user and return auth token."""
     if get_user_by_email(db, user_data.email):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -245,7 +245,23 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
         db.add(user)
         db.commit()
         db.refresh(user)
-        return user
+        
+        # Create access token immediately after registration
+        access_token = create_access_token(
+            data={"sub": user.id, "username": user.username}
+        )
+        
+        return AuthResponse(
+            user=UserResponse(
+                id=user.id,
+                username=user.username,
+                name=user.name,
+                email=user.email,
+                created_at=user.created_at,
+                is_active=user.is_active
+            ),
+            access_token=access_token
+        )
     except Exception as e:
         db.rollback()
         raise HTTPException(
@@ -254,9 +270,9 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
         )
 
 
-@app.post("/auth/login", response_model=Token)
+@app.post("/auth/login", response_model=AuthResponse)
 async def login(user_data: UserLogin, db: Session = Depends(get_db)):
-    """Login and get access token."""
+    """Login and get access token with user data."""
     user = authenticate_user(db, user_data.email, user_data.password)
     if not user:
         raise HTTPException(
@@ -268,7 +284,18 @@ async def login(user_data: UserLogin, db: Session = Depends(get_db)):
     access_token = create_access_token(
         data={"sub": user.id, "username": user.username}
     )
-    return Token(access_token=access_token)
+    
+    return AuthResponse(
+        user=UserResponse(
+            id=user.id,
+            username=user.username,
+            name=user.name,
+            email=user.email,
+            created_at=user.created_at,
+            is_active=user.is_active
+        ),
+        access_token=access_token
+    )
 
 
 @app.get("/auth/me", response_model=UserResponse)

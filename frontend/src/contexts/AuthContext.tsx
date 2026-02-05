@@ -93,7 +93,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 
                 localStorage.setItem(TOKEN_KEY, newToken);
                 setToken(newToken);
-                await fetchUser(newToken);
+                
+                // Use user data from login response directly (no separate /auth/me call needed)
+                if (data.user) {
+                    setUser(data.user);
+                } else {
+                    // Fallback for backward compatibility
+                    await fetchUser(newToken);
+                }
                 
                 return { success: true };
             } else {
@@ -117,8 +124,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             });
 
             if (response.ok) {
-                // Auto-login after registration
-                return await login(email, password);
+                const data = await response.json();
+                const newToken = data.access_token;
+                
+                // Registration now returns token and user data directly - no separate login needed
+                localStorage.setItem(TOKEN_KEY, newToken);
+                setToken(newToken);
+                
+                if (data.user) {
+                    setUser(data.user);
+                } else {
+                    // Fallback for backward compatibility
+                    await fetchUser(newToken);
+                }
+                
+                return { success: true };
             } else {
                 const errorData = await response.json();
                 return { success: false, error: errorData.detail || 'Registration failed' };

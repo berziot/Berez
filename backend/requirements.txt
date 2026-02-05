@@ -3,10 +3,9 @@ fastapi>=0.100.0
 mangum>=0.17.0
 python-multipart>=0.0.5
 
-# Database
+# Database (SQLite is built-in, just need SQLAlchemy)
 sqlmodel>=0.0.12
 SQLAlchemy>=2.0.0
-pymysql>=1.1.0
 
 # Authentication
 python-jose[cryptography]>=3.3.0
@@ -17,7 +16,6 @@ boto3>=1.28.0
 
 # Utilities
 python-dotenv>=1.0.0
-pandas>=1.5.0
 
 # Pagination
 fastapi-pagination>=0.12.0

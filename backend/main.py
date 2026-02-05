@@ -35,52 +35,95 @@ load_dotenv()
 IS_LAMBDA = os.getenv("AWS_LAMBDA_FUNCTION_NAME") is not None
 ENVIRONMENT = os.getenv("ENVIRONMENT", "local")
 
-# Database Configuration
-DB_USERNAME = os.getenv("DB_USERNAME")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_HOST = os.getenv("DB_HOST", "localhost")
-DB_PORT = os.getenv("DB_PORT", "3306")
-DB_NAME = os.getenv("DB_NAME", "berez_db")
-
-# Use PyMySQL for Lambda compatibility
-if IS_LAMBDA:
-    DATABASE_URL = f"mysql+pymysql://{DB_USERNAME}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-else:
-    DATABASE_URL = f"mysql+mysqlconnector://{DB_USERNAME}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-
 # App URL for CORS
 APP_URL = os.getenv("APP_URL", "http://localhost:3000")
 
-# S3 Configuration for photos
+# S3 Configuration
 S3_BUCKET = os.getenv("S3_BUCKET")
+DB_BUCKET = os.getenv("DB_BUCKET")  # For SQLite database storage
 AWS_REGION = os.getenv("AWS_REGION_NAME", "eu-west-1")
 
-# Local upload directory (for local development)
+# Local paths
 UPLOAD_DIR = Path("uploads")
-if not IS_LAMBDA:
-    UPLOAD_DIR.mkdir(exist_ok=True)
+LOCAL_DB_PATH = Path("berez.db")
+
+# Lambda paths
+LAMBDA_DB_PATH = Path("/tmp/berez.db")
 
 # S3 client (lazy initialization)
 _s3_client = None
 
 def get_s3_client():
     global _s3_client
-    if _s3_client is None and IS_LAMBDA:
+    if _s3_client is None:
         import boto3
         _s3_client = boto3.client('s3', region_name=AWS_REGION)
     return _s3_client
 
+
+def get_db_path() -> Path:
+    """Get the appropriate database path based on environment."""
+    if IS_LAMBDA:
+        return LAMBDA_DB_PATH
+    return LOCAL_DB_PATH
+
+
+def init_lambda_db():
+    """Download SQLite database from S3 on Lambda cold start."""
+    if not IS_LAMBDA or not DB_BUCKET:
+        return
+    
+    db_path = get_db_path()
+    s3 = get_s3_client()
+    
+    try:
+        # Try to download existing database from S3
+        s3.download_file(DB_BUCKET, 'berez.db', str(db_path))
+        print(f"Downloaded database from S3 to {db_path}")
+    except Exception as e:
+        # Database doesn't exist in S3 yet, will be created fresh
+        print(f"No existing database in S3, will create new: {e}")
+
+
+def save_lambda_db():
+    """Upload SQLite database to S3 after changes."""
+    if not IS_LAMBDA or not DB_BUCKET:
+        return
+    
+    db_path = get_db_path()
+    if not db_path.exists():
+        return
+    
+    s3 = get_s3_client()
+    try:
+        s3.upload_file(str(db_path), DB_BUCKET, 'berez.db')
+        print(f"Uploaded database to S3")
+    except Exception as e:
+        print(f"Failed to upload database to S3: {e}")
+
+
+# Initialize Lambda database on cold start
+if IS_LAMBDA:
+    init_lambda_db()
+
+# Database Configuration - Use SQLite
+db_path = get_db_path()
+DATABASE_URL = f"sqlite:///{db_path}"
+
+# Create uploads directory for local development
+if not IS_LAMBDA:
+    UPLOAD_DIR.mkdir(exist_ok=True)
+
 # SQLAlchemy setup
 engine = create_engine(
     DATABASE_URL,
+    connect_args={"check_same_thread": False},  # Needed for SQLite
     pool_pre_ping=True,
-    pool_recycle=300,
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Create tables (only if not in Lambda - use migrations for production)
-if not IS_LAMBDA:
-    SQLModel.metadata.create_all(engine)
+# Create tables
+SQLModel.metadata.create_all(engine)
 
 # FastAPI app
 app = FastAPI(
@@ -117,6 +160,8 @@ def get_db():
         yield db
     finally:
         db.close()
+        # Save database to S3 after each request (for Lambda)
+        save_lambda_db()
 
 
 # Auth dependency that works with our get_db
@@ -357,17 +402,25 @@ async def get_fountain_photos(fountain_id: int, db: Session = Depends(get_db)):
 
 # ==================== FOUNTAIN ENDPOINTS ====================
 
-@app.get("/fountains/{longitude},{latitude}", response_model=Page[Fountain])
-async def read_fountains(longitude: float, latitude: float, db=Depends(get_db)):
-    """Get paginated fountains ordered by distance from coordinates."""
+@app.get("/fountains/{longitude},{latitude}")
+async def read_fountains(
+    longitude: float, 
+    latitude: float, 
+    limit: int = 50,
+    db=Depends(get_db)
+):
+    """Get fountains ordered by distance from coordinates."""
     try:
-        return paginate(
-            db,
-            select(Fountain).order_by(
-                (Fountain.longitude - longitude) * (Fountain.longitude - longitude) +
-                (Fountain.latitude - latitude) * (Fountain.latitude - latitude)
-            )
-        )
+        # Calculate distance and order by it
+        fountains = db.query(Fountain).order_by(
+            (Fountain.longitude - longitude) * (Fountain.longitude - longitude) +
+            (Fountain.latitude - latitude) * (Fountain.latitude - latitude)
+        ).limit(limit).all()
+        
+        return {
+            "items": fountains,
+            "total": db.query(Fountain).count()
+        }
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -561,25 +614,22 @@ async def create_review(
 @app.get("/populate")
 async def populate_db(db=Depends(get_db)):
     """Populate database from fountains.csv file."""
-    import pandas as pd
+    import csv
+    import ast
     
-    def extract_values(row):
+    def extract_coordinates(coord_str):
+        """Extract longitude and latitude from coordinate string."""
         try:
-            d = json.loads(row.replace("'", '"'))
+            d = json.loads(coord_str.replace("'", '"'))
         except json.JSONDecodeError:
-            import ast
-            d = ast.literal_eval(row)
-        return pd.Series([d['x'], d['y']])
+            d = ast.literal_eval(coord_str)
+        return d['x'], d['y']
     
     try:
         # Handle both local and Lambda paths
         csv_path = 'fountains.csv'
         if IS_LAMBDA:
             csv_path = '/var/task/fountains.csv'
-        
-        df = pd.read_csv(csv_path)
-        df[['longitude', 'latitude']] = df['coordinates'].apply(lambda x: extract_values(x))
-        df.drop('coordinates', axis=1, inplace=True)
         
         type_converter = {
             'ברזית גליל': FountainType.cylindrical_fountain,
@@ -590,25 +640,36 @@ async def populate_db(db=Depends(get_db)):
         }
         
         count = 0
-        for i, row in df.iterrows():
-            existing = db.query(Fountain).filter(Fountain.id == row['oid']).first()
-            if existing:
-                continue
+        with open(csv_path, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                existing = db.query(Fountain).filter(Fountain.id == int(row['oid'])).first()
+                if existing:
+                    continue
                 
-            fountain = Fountain(
-                id=row['oid'],
-                type=type_converter.get(row['fountain_type'], FountainType.cylindrical_fountain),
-                address=row['open_map_address'],
-                latitude=row['latitude'],
-                longitude=row['longitude'],
-                dog_friendly=row['dog_friendly'],
-                bottle_refill=False,
-                average_general_rating=0,
-                number_of_ratings=0,
-                last_updated=datetime.now()
-            )
-            db.add(fountain)
-            count += 1
+                longitude, latitude = extract_coordinates(row['coordinates'])
+                
+                # Handle dog_friendly - can be 'True', 'False', 'Yes', 'No', 1, 0
+                dog_friendly_val = row.get('dog_friendly', 'False')
+                if isinstance(dog_friendly_val, str):
+                    dog_friendly = dog_friendly_val.lower() in ('true', 'yes', '1')
+                else:
+                    dog_friendly = bool(dog_friendly_val)
+                
+                fountain = Fountain(
+                    id=int(row['oid']),
+                    type=type_converter.get(row['fountain_type'], FountainType.cylindrical_fountain),
+                    address=row['open_map_address'],
+                    latitude=latitude,
+                    longitude=longitude,
+                    dog_friendly=dog_friendly,
+                    bottle_refill=False,
+                    average_general_rating=0,
+                    number_of_ratings=0,
+                    last_updated=datetime.now()
+                )
+                db.add(fountain)
+                count += 1
         
         db.commit()
         return {"message": f"Successfully populated {count} fountains"}

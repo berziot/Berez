@@ -1,0 +1,26 @@
+# SAM CLI configuration file
+# Run: sam deploy --guided for first-time setup
+
+version = 0.1
+
+[default.deploy.parameters]
+stack_name = "berez-api"
+resolve_s3 = true
+s3_prefix = "berez-api"
+region = "eu-west-1"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Environment=\"prod\""
+image_repositories = []
+
+[default.build.parameters]
+use_container = true
+
+[dev.deploy.parameters]
+stack_name = "berez-api-dev"
+resolve_s3 = true
+s3_prefix = "berez-api-dev"
+region = "eu-west-1"
+confirm_changeset = false
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Environment=\"dev\""
